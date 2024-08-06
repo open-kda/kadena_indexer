@@ -1,0 +1,7 @@
+aiohttp==3.*
+cachetools==5.4.*
+easydict>=1.13
+orjson>=3.10.0
+portion>=2.4.2
+pymongo==4.*
+PyYAML==6.*

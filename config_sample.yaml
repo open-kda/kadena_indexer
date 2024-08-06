@@ -1,0 +1,34 @@
+db: kadena_events
+node: http://kadena-1:1848
+events:
+  - name: coin.TRANSFER
+    height: ~
+    chains: ["1","2"]
+
+  - name: free.kishu-ken.TRANSFER
+    height: [2300000, ~]
+    chains: ["0","1","2","3"]
+
+  - name: n_582fed11af00dc626812cd7890bb88e72067f28c.bro.TRANSFER
+    height: [4000000, ~]
+    chains: ["1","2"]
+
+  - name: n_e47192edb40ff014ab9c82ae42972d09bbad4316.bro-lottery.TICKET-BOUGHT
+    height: [4000000, ~]
+    chains: ["2"]
+
+  - name: n_e47192edb40ff014ab9c82ae42972d09bbad4316.bro-lottery.LOTTERY-ROUND
+    height: [4000000, ~]
+    chains: ["2"]
+
+  - name: n_e47192edb40ff014ab9c82ae42972d09bbad4316.bro-lottery.SETTLED
+    height: [4900000, ~]
+    chains: ["2"]
+
+  - name: kaddex.exchange.UPDATE
+    height: [3800000, ~]
+    chains: ["2"]
+
+  - name: kaddex.exchange.SWAP
+    height: [3800000, ~]
+    chains: ["2"]
