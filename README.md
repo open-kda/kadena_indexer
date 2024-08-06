@@ -4,7 +4,7 @@
 
 This tool automatically retrieves events from a Chainweb Node:
   - In real-time using block streams (with a minimum of 2 confirmations)
-  - In the block history, to fill missing non indexed blocks
+  - In the block history (backward indexing), to fill missing non indexed blocks
 
 The tool manages missed blocks and events according to the configuration.
 
@@ -86,7 +86,7 @@ events:
 ## Chainweb node Configuration
 
 The node must expose its service endpoint.
-The node must
+The node must be configured with `headerStream: true`
 
 
 ## MongoDB configuration and layout
@@ -110,7 +110,15 @@ Inside an events collection, the indexer creates 1 document per event:
   ts: ISODate('2022-07-15T00:35:57.399Z'); // Creation date of the block, differs from Pact data
 }
 ```
-Decimal parameters are automatically converted to Mongo `Decimal128`
-Integers parameters less than 64 bits are automatically converted to Mongo integers.
+- Decimal parameters are automatically converted to Mongo `Decimal128`
+- Integers parameters less than 64 bits are automatically converted to Mongo integers.
 
 The indexer creates its own indexes. But the user is encouraged to create his own indexes depending on his needs and event types.
+
+## Future improvements
+
+- Support a MongoDB from another host
+- Better manage the case when a event/chain is completely removed from the config
+- Devnet support
+- Improve backward indexing performance
+- Add a command line to manually prune an event/chain/range to force re-indexing
