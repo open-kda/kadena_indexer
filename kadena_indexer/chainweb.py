@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 import json
 from functools import partial
-from datetime import datetime
+from datetime import datetime, UTC
 import logging
 import orjson
 
@@ -22,7 +22,7 @@ def pact_hook(x):
         try:
             return Decimal128(x["decimal"])
         except Exception: # pylint: disable=broad-except
-            # We are probably here facing to 
+            # We are probably here facing to
             return x
     if "int" in x:
         v = int(x["int"])
@@ -62,7 +62,7 @@ class ChainWebBlock:
         self.height =  data["header"]["height"]
         self.parent =  data["header"]["parent"]
         self.chain = str(data["header"]["chainId"])
-        self.ts = datetime.fromtimestamp(data["header"]["creationTime"]/1e6)
+        self.ts = datetime.fromtimestamp(data["header"]["creationTime"]/1e6, UTC)
         self.payload = data["payloadWithOutputs"]
 
     def transactions_output(self):
