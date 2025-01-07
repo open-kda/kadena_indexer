@@ -72,10 +72,11 @@ class ChainWebBlock:
 
     def events(self):
         """ Return all the events emitted by the block """
-        for rank, trx in enumerate(self.transactions_output()):
-            if "events" in trx:
-                yield from map(lambda x: Event(event_fqn(x),x["params"], trx["reqKey"] , self.chain, self.block_hash, rank, self.height, self.ts), trx["events"]) #pylint: disable=cell-var-from-loop
-
+        rank = 0
+        for trx in self.transactions_output():
+            for ev in trx.get("events", []):
+                yield Event(event_fqn(ev),ev["params"], trx["reqKey"] , self.chain, self.block_hash, rank, self.height, self.ts)
+                rank += 1
 
 class ChainWeb:
     """ Mainclass that handles all Chainweb communications stuffs """
