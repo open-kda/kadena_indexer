@@ -15,6 +15,7 @@ from .kadena_common import b64_decode
 logger = logging.getLogger(__name__)
 
 BLOCKS_PER_BATCH = 300
+BLOCKS_PER_REQUEST = 30
 
 def pact_hook(x):
     """ Pact hook for the JSON deserializer """
@@ -118,15 +119,14 @@ class ChainWeb:
         body = {"lower":[], "upper":[parent]}
 
         for mah in range(max_height, min_height-1, -BLOCKS_PER_BATCH):
-            _next = "INIT"
-            while _next:
-                params = {"limit":150, "minheight":max(mah - BLOCKS_PER_BATCH, min_height), "maxheight":mah}
-                if _next != "INIT":
+            _next = ""
+            while _next is not None:
+                params = {"limit":BLOCKS_PER_REQUEST, "minheight":max(mah - BLOCKS_PER_BATCH, min_height), "maxheight":mah}
+                if _next:
                     params["next"] = _next
 
                 async with self.session.post("{:s}/chain/{:s}/block/branch".format(self.api_url, chain), params=params, json=body) as resp:
                     data = orjson.loads(await resp.read())
-                    # data = await resp.json()
                     for blk in map(ChainWebBlock, data["items"]):
                         yield blk
                     _next = data["next"]
