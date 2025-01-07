@@ -88,7 +88,7 @@ class ChainWeb:
         self.cache = FIFOCache(256)
 
     async def __aenter__(self):
-        tmout = aiohttp.ClientTimeout(sock_read=30.0, connect=30.0)
+        tmout = aiohttp.ClientTimeout(sock_read=180.0, connect=30.0)
         self.session = await aiohttp.ClientSession(timeout=tmout, read_bufsize=1024*1024).__aenter__()
 
         logger.info("Retrieving Chainweb info")
