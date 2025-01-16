@@ -7,7 +7,7 @@ from easydict import EasyDict
 from pymongo import MongoClient
 from .coordinator import Coordinator
 from .chainweb import ChainWeb
-from .scriptsMaster import run_sripts
+from .collections import process_collections
 
 logger = logging.getLogger(__name__)
 
@@ -90,21 +90,15 @@ class Indexer:
     async def _fill_missing_blocks_task(self, cw, chain):
         while True:
             try:
-                # Fill missing blocks
                 await self._fill_missing_blocks(cw, self._tips[chain])
-                
-                # Run scripts after filling missing blocks
-                logger.info("Running scripts after filling missing blocks")
-                run_sripts()
-                
-                # Sleep before the next iteration
                 await asyncio.sleep(120.0)
             except asyncio.CancelledError:
                 logger.info("Chain {:<2}: => Ended".format(chain))
                 return
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception as e: # pylint: disable=broad-except
                 logger.error("Chain {:<2}: Error when filling blocks: {!s}".format(chain, e))
-                await asyncio.sleep(120.0)  
+                await asyncio.sleep(120.0)
+
 
 
     async def run(self):
@@ -118,16 +112,8 @@ class Indexer:
                     self._tips[b.chain] = b
                     if b.chain not in task_started:
                         task_started[b.chain] = asyncio.create_task(self._fill_missing_blocks_task(cw, b.chain))
-                    
-                    # Run scripts after processing a new block
-                    logger.info("Running scripts after processing a new block")
-                    run_sripts()
             except asyncio.CancelledError:
                 logger.info("Cancelled")
                 for tsk in task_started.values():
                     tsk.cancel()
                     #await tsk
-            except Exception as e:
-                logger.error("Error in run method: {!s}".format(e))
-       
-        
