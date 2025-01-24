@@ -24,7 +24,6 @@ class Indexer:
         self._check_indexes()
         self._prune_db()
 
-
     def _load_config(self, config_file):
         logger.info("Loading config {}".format(config_file))
         with open(config_file, "rb") as fd:
@@ -66,7 +65,6 @@ class Indexer:
                 logger.warning("{} => Index {} missing".format(ev.name, "st_prune"))
                 coll.create_index({"chain":1, "height":1}, name="st_prune")
 
-
     def _index_block(self, blk, log_height=0):
         with self.mongo_client.start_session() as session:
             with session.start_transaction():
@@ -78,14 +76,12 @@ class Indexer:
         if log_height and blk.height % log_height == 0:
             logger.info("Chain {:<2}: Indexed block {:d}".format(blk.chain, blk.height))
 
-
     async def _fill_missing_blocks(self, cw, ref_blk):
         for it in reversed(self.coordinator.get_missing(ref_blk.chain, ref_blk.height-1)):
             logger.info("Chain {:<2}: Fill hole {:d} -> {:d}".format(ref_blk.chain, it.lower, it.upper))
             async for b in cw.get_blocks(ref_blk.chain, ref_blk.block_hash, it.lower, it.upper):
                 self._index_block(b,1000)
             logger.info("Chain {:<2}: Fill hole completed {:d} -> {:d}".format(ref_blk.chain, it.lower, it.upper))
-
 
     async def _fill_missing_blocks_task(self, cw, chain):
         while True:
@@ -105,7 +101,6 @@ class Indexer:
             except Exception as e:  # pylint: disable=broad-except
                 logger.error("Chain {:<2}: Error when filling blocks: {!s}".format(chain, e))
                 await asyncio.sleep(120.0)  
-
 
     async def run(self):
         """ Async function to start the indexer """

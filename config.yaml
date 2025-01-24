@@ -1,5 +1,5 @@
 db: kadena_events
-mongo_uri: "mongodb+srv://tokenize:test123@kadenanode.rnxvs.mongodb.net/?retryWrites=true&w=majority&appName=kadenaNode"
+mongo_uri: "mongodb+srv://master:test123master@kadenanode.rnxvs.mongodb.net/?retryWrites=true&w=majority&appName=kadenaNode"
 node: https://node2.kadenaiconnect.com
 events:
   - name: n_4e470a97222514a8662dd1219000a0431451b0ee.ledger.SUPPLY

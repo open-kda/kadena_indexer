@@ -37,11 +37,8 @@ def process_collections():
         temp_max_height_processed = last_collection_height
 
         # Process CREATE-COLLECTION events
-        create_collection_events = mongo_db['events'].find(
-            {
-                "qual_name": "n_4e470a97222514a8662dd1219000a0431451b0ee.policy-collection.CREATE-COLLECTION",
-                "height": {"$gt": last_collection_height}
-            }
+        create_collection_events = mongo_db['n_4e470a97222514a8662dd1219000a0431451b0ee.policy-collection.CREATE-COLLECTION'].find(
+            {"height": {"$gt": last_collection_height}}
         ).sort("height", 1)
 
         for event in create_collection_events:
@@ -66,11 +63,8 @@ def process_collections():
             temp_max_height_processed = max(temp_max_height_processed, event['height'])
 
         # Process ADD-TO-COLLECTION events
-        add_to_collection_events = mongo_db['events'].find(
-            {
-                "qual_name": "n_4e470a97222514a8662dd1219000a0431451b0ee.policy-collection.ADD-TO-COLLECTION",
-                "height": {"$gt": max_height_processed}
-            }
+        add_to_collection_events = mongo_db['n_4e470a97222514a8662dd1219000a0431451b0ee.policy-collection.ADD-TO-COLLECTION'].find(
+            {"height": {"$gt": max_height_processed}}
         ).sort("height", 1)
 
         for event in add_to_collection_events:
@@ -113,11 +107,9 @@ def process_collections():
         if temp_max_height_processed > max_height_processed:
             metadata_collection.update_one(
                 {"key": "last_collection_height"},
-                {"$set": {"value": str(temp_max_height_processed)}},
+                {"$set": {"value": temp_max_height_processed}},
                 upsert=True
             )
-            max_height_processed = temp_max_height_processed
-
     except Exception as e:
         print(f"An error occurred: {e}")
 
@@ -130,3 +122,4 @@ def process_collections():
 # Allow direct execution but avoid automatic execution during imports
 if __name__ == "__main__":
     process_collections()
+

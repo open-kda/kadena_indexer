@@ -51,7 +51,6 @@ def process_sales():
         mongo_db = mongo_client['kadena_events']
 
         metadata_collection = mongo_db['script_metadata']
-        events_collection = mongo_db['events']
         sales_collection = mongo_db['chain8ngsales']
         auctions_collection = mongo_db['chain8ngauctions']
         sales_data_collection = mongo_db['chain8ngsalesdata']
@@ -63,23 +62,25 @@ def process_sales():
         logging.info(f"Last processed height: {last_ngsales_height}")
 
         event_queries = {
-            'SALE': {'qual_name': 'ledger.SALE'},
-            'FIXED-SALE-OFFER': {'qual_name': 'policy-fixed-sale.FIXED-SALE-OFFER'},
-            'FIXED-SALE-WITHDRAWN': {'qual_name': 'policy-fixed-sale.FIXED-SALE-WITHDRAWN'},
-            'FIXED-SALE-BOUGHT': {'qual_name': 'policy-fixed-sale.FIXED-SALE-BOUGHT'},
-            'AUCTION-SALE-OFFER': {'qual_name': 'policy-auction-sale.AUCTION-SALE-OFFER'},
-            'AUCTION-SALE-BOUGHT': {'qual_name': 'policy-auction-sale.AUCTION-SALE-BOUGHT'},
-            'PLACE-BID': {'qual_name': 'policy-auction-sale.PLACE-BID'},
-            'AUCTION-SALE-WITHDRAWN': {'qual_name': 'policy-auction-sale.AUCTION-SALE-WITHDRAWN'}
+            'SALE': 'n_4e470a97222514a8662dd1219000a0431451b0ee.ledger.SALE',
+            'FIXED-SALE-OFFER': 'n_4e470a97222514a8662dd1219000a0431451b0ee.policy-fixed-sale.FIXED-SALE-OFFER',
+            'FIXED-SALE-WITHDRAWN': 'n_4e470a97222514a8662dd1219000a0431451b0ee.policy-fixed-sale.FIXED-SALE-WITHDRAWN',
+            'FIXED-SALE-BOUGHT': 'n_4e470a97222514a8662dd1219000a0431451b0ee.policy-fixed-sale.FIXED-SALE-BOUGHT',
+            'AUCTION-SALE-OFFER': 'n_4e470a97222514a8662dd1219000a0431451b0ee.policy-auction-sale.AUCTION-SALE-OFFER',
+            'AUCTION-SALE-BOUGHT': 'n_4e470a97222514a8662dd1219000a0431451b0ee.policy-auction-sale.AUCTION-SALE-BOUGHT',
+            'PLACE-BID': 'n_4e470a97222514a8662dd1219000a0431451b0ee.policy-auction-sale.PLACE-BID',
+            'AUCTION-SALE-WITHDRAWN': 'n_4e470a97222514a8662dd1219000a0431451b0ee.policy-auction-sale.AUCTION-SALE-WITHDRAWN'
         }
 
         max_height_processed = last_ngsales_height
 
-        for event_type, query_filter in event_queries.items():
+        for event_type, collection_name in event_queries.items():
             logging.info(f"Processing {event_type} events...")
-            query_filter["height"] = {"$gt": last_ngsales_height}
-
-            events = list(events_collection.find(query_filter).sort("height", 1))
+            events = list(
+                mongo_db[collection_name].find(
+                    {"height": {"$gt": last_ngsales_height}}
+                ).sort("height", 1)
+            )
             logging.info(f"Fetched {len(events)} {event_type} events.")
 
             for event in events:

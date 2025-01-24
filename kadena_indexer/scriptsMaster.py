@@ -7,7 +7,7 @@ def run_sripts():
     process_collections()
     process_tokens()
     process_sales()
-    process_sales_helper()
+    #process_sales_helper()
     
 if __name__ == "__main__":
     run_sripts()

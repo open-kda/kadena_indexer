@@ -7,16 +7,17 @@ from dotenv import load_dotenv
 import tempfile
 load_dotenv()
 
-lock_file_path = os.path.join(tempfile.gettempdir(), "token_script.lock")
+lock_file_path = os.path.join(tempfile.gettempdir(), "token_tk_script.lock")
 
 def process_tokens():
     if os.path.exists(lock_file_path):
+        print(lock_file_path)
         print("Another instance of the script is running. Exiting.")
         sys.exit()
 
     with open(lock_file_path, 'w') as lock_file:
         lock_file.write("LOCKED")
-        print("Lock file created.")
+        print("Tokens Lock file created.")
 
     try:
         mongo_uri = os.environ.get('Mongo_URI')
@@ -37,23 +38,25 @@ def process_tokens():
 
         event_queries = {
             'MINT': "n_4e470a97222514a8662dd1219000a0431451b0ee.ledger.MINT",
-            'RECONCILE': "n_4e470a97222514a8662dd1219000a0431451b0ee.ledger.RECONCILE"
+            'RECONCILE': "n_4e470a97222514a8662dd1219000a0431451b0ee.ledger.RECONCILE",
+            'SUPPLY': "n_4e470a97222514a8662dd1219000a0431451b0ee.ledger.SUPPLY",
+            'TOKEN-CREATE': "n_4e470a97222514a8662dd1219000a0431451b0ee.ledger.TOKEN-CREATE",
         }
 
         # Processing logic for different event types
-        for event_type in ['MINT', 'SUPPLY', 'TOKEN-CREATE', 'RECONCILE']:
+        #'MINT',
+        for event_type in ['MINT','RECONCILE','SUPPLY','TOKEN-CREATE']:
             print(f"Processing {event_type} events...")
 
             # Fetching relevant events from MongoDB (for simulation purposes)
             events = list(
-                mongo_db['events'].find(
+                mongo_db[event_queries.get(event_type)].find(
                     {
-                        "qual_name": event_queries.get(event_type),
                         "height": {"$gt": last_token_height}
                     }
                 ).sort("height", 1)
             )
-            print("events:", events)
+            #print("events:", events)
 
             if not events:
                 print("No events found for the given criteria.")
@@ -62,8 +65,8 @@ def process_tokens():
 
 
             for event in events:
-                request_key = event['request_key']
-                block_hash = event['block']
+                #request_key = event['request_key']
+                #block_hash = event['block']
                 event_params = event['params']
                 event_height = event['height']
                 print(f"Processing {event_type} event at height {event['height']}...")
