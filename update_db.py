@@ -3,12 +3,10 @@ from pymongo.server_api import ServerApi
 
 # MongoDB URIs
 source_uri = (
-    "mongodb://root:test6test6withpas5528fjF@io.kadenaiconnect.com:27018/admin?"
-    "authSource=admin&tls=true&tlsAllowInvalidCertificates=true&directConnection=true"
+    ""
 )
 destination_uri = (
-    "mongodb+srv://master:test123master@kadenanode.rnxvs.mongodb.net/"
-    "?retryWrites=true&w=majority&appName=kadenaNode"
+    ""
 )
 
 def migrate_data(source_uri, destination_uri):
