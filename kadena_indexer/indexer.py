@@ -90,8 +90,8 @@ class Indexer:
                 await self._fill_missing_blocks(cw, self._tips[chain])
                 
                 # Run scripts after filling missing blocks
-                logger.info("Running scripts after filling missing blocks")
-                run_sripts()
+                #logger.info("Running scripts after filling missing blocks")
+                #run_sripts()
                 
                 # Sleep before the next iteration
                 await asyncio.sleep(120.0)
@@ -115,8 +115,8 @@ class Indexer:
                         task_started[b.chain] = asyncio.create_task(self._fill_missing_blocks_task(cw, b.chain))
                     
                     # Run scripts after processing a new block
-                    logger.info("Running scripts after processing a new block")
-                    run_sripts()
+                    #logger.info("Running scripts after processing a new block")
+                    #run_sripts()
             except asyncio.CancelledError:
                 logger.info("Cancelled")
                 for tsk in task_started.values():
