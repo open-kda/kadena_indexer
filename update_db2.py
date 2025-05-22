@@ -13,7 +13,7 @@ destination_uri = "mongodb://root:test6test6withpas5528fjF@neo.kadenaiconnect.co
 csv_directory = "V2"
 
 # List of CSV files to process (edit this list as needed)
-files = ["sql2"]
+files = ["sql10","sql4","sql6"]
 
 # List of modules to migrate
 target_modules = [
