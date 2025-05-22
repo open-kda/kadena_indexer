@@ -94,13 +94,13 @@ class Indexer:
                 #run_sripts()
                 
                 # Sleep before the next iteration
-                await asyncio.sleep(120.0)
+                await asyncio.sleep(5.0)
             except asyncio.CancelledError:
                 logger.info("Chain {:<2}: => Ended".format(chain))
                 return
             except Exception as e:  # pylint: disable=broad-except
                 logger.error("Chain {:<2}: Error when filling blocks: {!s}".format(chain, e))
-                await asyncio.sleep(120.0)  
+                await asyncio.sleep(5.0)  
 
     async def run(self):
         """ Async function to start the indexer """

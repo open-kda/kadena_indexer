@@ -1,63 +1,176 @@
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
+from pymongo.errors import BulkWriteError, DuplicateKeyError
+import sys
 
-# MongoDB URIs
-source_uri = (
-    ""
-)
-destination_uri = (
-    ""
-)
+# MongoDB URI - credentials masked for security
+mongo_uri = "mongodb://root:test6test6withpas5528fjF@neo.kadenaiconnect.com:27018/admin?authSource=admin&tls=true&tlsAllowInvalidCertificates=true&directConnection=true"
 
-def migrate_data(source_uri, destination_uri):
-    """Migrate data from the source MongoDB to the destination."""
+def migrate_data(mongo_uri):
+    """Migrate data from kadena_events to nft_events database."""
+    client = None
+    
     try:
-        # Connect to source and destination MongoDB
-        source_client = MongoClient(source_uri, server_api=ServerApi("1"))
-        destination_client = MongoClient(destination_uri, server_api=ServerApi("1"))
+        # Connect to MongoDB
+        print("Connecting to database...")
+        client = MongoClient(mongo_uri, server_api=ServerApi('1'))
         
-        # List databases in the source
-        source_databases = source_client.list_database_names()
-        print(f"Source Databases: {source_databases}")
+        # Test connection
+        client.admin.command('ping')
+        print("Successfully connected to database")
         
-        for db_name in source_databases:
-            if db_name in ['admin', 'config', 'local', 'nftDatabase']:
-                # Skip system databases
+        # Database names
+        source_db_name = 'kadena_events'
+        destination_db_name = 'nft_events'
+        
+        print(f"Migrating from {source_db_name} to {destination_db_name}")
+        
+        # Skip these large collections within kadena_events
+        skip_collections = [
+            'kdlaunch.kdswap-exchange.CREATE_PAIR',
+            'kdswap-exchange.SWAP',
+            'kaddex.exchange.SWAP',
+            'n_e309f0fa7cf3a13f93a8da5325cdad32790d2070.heron.TRANSFER',
+            'kdlaunch.kdswap-exchange.SWAP',
+            'kdswap-exchange.UPDATE',
+            'kaddex.exchange.CREATE_PAIR',
+            'kaddex.exchange.UPDATE',
+            'kdlaunch.kdswap-exchange.UPDATE'
+        ]
+        
+        # Track migration statistics
+        total_collections = 0
+        total_documents = 0
+        total_duplicates = 0
+        total_errors = 0
+        skipped_collections = 0
+        
+        # Connect to specific databases
+        source_db = client[source_db_name]
+        destination_db = client[destination_db_name]
+
+        # List collections in the kadena_events database
+        collections = source_db.list_collection_names()
+        print(f"Source Database: {source_db_name}, Collections found: {len(collections)}")
+        
+        for collection_name in collections:
+            if collection_name in skip_collections:
+                print(f"  Skipping large collection: {collection_name}")
+                skipped_collections += 1
                 continue
             
-            source_db = source_client[db_name]
-            destination_db = destination_client[db_name]
+            total_collections += 1
+            source_collection = source_db[collection_name]
+            destination_collection = destination_db[collection_name]
 
-            # List collections in the database
-            collections = source_db.list_collection_names()
-            print(f"Copying database: {db_name}, Collections: {collections}")
+            # Count documents and fetch them from the source collection
+            doc_count = source_collection.count_documents({})
             
-            for collection_name in collections:
-                if collection_name in ['n_4e470a97222514a8662dd1219000a0431451b0ee.ledger.RECONCILE', 'coin.TRANSFER', 'n_4e470a97222514a8662dd1219000a0431451b0ee.policy-auction-sale.AUCTION-SALE-WITHDRAWN', 'n_4e470a97222514a8662dd1219000a0431451b0ee.ledger.MINT','n_4e470a97222514a8662dd1219000a0431451b0ee.policy-fixed-sale.FIXED-SALE-OFFER','kdlaunch.kdswap-exchange.CREATE_PAIR','kdswap-exchange.SWAP','n_4e470a97222514a8662dd1219000a0431451b0ee.policy-auction-sale.AUCTION-SALE-OFFER','n_4e470a97222514a8662dd1219000a0431451b0ee.policy-collection.ADD-TO-COLLECTION','kaddex.exchange.SWAP','n_e309f0fa7cf3a13f93a8da5325cdad32790d2070.heron.TRANSFER','kdlaunch.kdswap-exchange.SWAP','kdswap-exchange.UPDATE','kaddex.exchange.CREATE_PAIR','kaddex.exchange.UPDATE','kdlaunch.kdswap-exchange.UPDATE']:
-                    # Skip system collection
-                    continue
-            
-                source_collection = source_db[collection_name]
-                destination_collection = destination_db[collection_name]
+            if doc_count > 0:
+                print(f"  Migrating {doc_count} documents from {source_db_name}.{collection_name} to {destination_db_name}.{collection_name}")
+                
+                # Process documents in batches to avoid memory issues
+                batch_size = 1000
+                collection_documents = 0
+                collection_duplicates = 0
+                collection_errors = 0
+                
+                for i in range(0, doc_count, batch_size):
+                    batch = list(source_collection.find({}).skip(i).limit(batch_size))
+                    if batch:
+                        # Try to insert the batch, handling duplicates
+                        batch_result = insert_batch_with_duplicate_handling(
+                            destination_collection, batch
+                        )
+                        
+                        collection_documents += batch_result['inserted']
+                        collection_duplicates += batch_result['duplicates']
+                        collection_errors += batch_result['errors']
+                        
+                        print(f"    Batch {i//batch_size + 1}: {batch_result['inserted']} inserted, "
+                              f"{batch_result['duplicates']} duplicates, {batch_result['errors']} errors "
+                              f"({i+len(batch)}/{doc_count})")
+                
+                total_documents += collection_documents
+                total_duplicates += collection_duplicates
+                total_errors += collection_errors
+                
+                print(f"  Completed {collection_name}: {collection_documents} inserted, "
+                      f"{collection_duplicates} duplicates, {collection_errors} errors")
+            else:
+                print(f"  No documents to migrate in {collection_name}")
 
-                # Fetch all documents from the source collection
-                documents = list(source_collection.find({}))
-                if documents:
-                    print(f"Inserting {len(documents)} documents into {db_name}.{collection_name}")
-                    # Insert documents into the destination collection
-                    destination_collection.insert_many(documents)
-                else:
-                    print(f"No documents to migrate in {db_name}.{collection_name}")
-        
+        # Print summary
+        print("\nMigration Summary:")
+        print(f"Source Database: {source_db_name}")
+        print(f"Destination Database: {destination_db_name}")
+        print(f"Collections processed: {total_collections} (skipped: {skipped_collections})")
+        print(f"Total documents inserted: {total_documents}")
+        print(f"Total duplicates skipped: {total_duplicates}")
+        print(f"Total errors encountered: {total_errors}")
         print("Migration completed successfully!")
 
     except Exception as e:
-        print(f"An error occurred during migration: {e}")
+        print(f"An error occurred during migration: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
 
     finally:
-        # Close the clients
-        source_client.close()
-        destination_client.close()
+        # Close the client
+        if client:
+            client.close()
+    
+    return True
+
+def insert_batch_with_duplicate_handling(collection, batch):
+    """
+    Insert a batch of documents with proper duplicate handling.
+    Returns a dictionary with counts of inserted, duplicates, and errors.
+    """
+    result = {
+        'inserted': 0,
+        'duplicates': 0,
+        'errors': 0
+    }
+    
+    try:
+        # Try to insert the entire batch first
+        insert_result = collection.insert_many(batch, ordered=False)
+        result['inserted'] = len(insert_result.inserted_ids)
+        return result
+        
+    except BulkWriteError as bulk_error:
+        # Handle bulk write errors (mostly duplicates)
+        write_errors = bulk_error.details.get('writeErrors', [])
+        result['inserted'] = bulk_error.details.get('nInserted', 0)
+        
+        for error in write_errors:
+            if error.get('code') == 11000:  # Duplicate key error
+                result['duplicates'] += 1
+            else:
+                result['errors'] += 1
+                print(f"    Unexpected write error: {error}")
+        
+        return result
+        
+    except Exception as e:
+        # Handle other errors by trying individual inserts
+        print(f"    Batch insert failed, trying individual inserts: {str(e)}")
+        
+        for doc in batch:
+            try:
+                collection.insert_one(doc)
+                result['inserted'] += 1
+            except DuplicateKeyError:
+                result['duplicates'] += 1
+            except Exception as individual_error:
+                result['errors'] += 1
+                print(f"    Individual insert error: {individual_error}")
+        
+        return result
 
 if __name__ == "__main__":
-    migrate_data(source_uri, destination_uri)
+    print("Starting MongoDB migration...")
+    success = migrate_data(mongo_uri)
+    sys.exit(0 if success else 1)

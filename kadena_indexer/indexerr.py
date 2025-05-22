@@ -7,7 +7,7 @@ from easydict import EasyDict
 from pymongo import MongoClient
 from .coordinator import Coordinator
 from .chainweb import ChainWeb
-from .collections import process_collections
+from .NG_scripts.collections import process_collections
 
 logger = logging.getLogger(__name__)
 
