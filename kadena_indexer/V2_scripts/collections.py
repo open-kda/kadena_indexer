@@ -176,6 +176,7 @@ def process_collection_event(event, collections_collection):
                 "maxSize": maxSize_value,
                 "name": collection_name,
                 "size": 0,
+                "approved": False,
                 "tokens": []
             }},
             upsert=True
