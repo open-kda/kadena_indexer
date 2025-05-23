@@ -7,7 +7,6 @@ from easydict import EasyDict
 from pymongo import MongoClient
 from .coordinator import Coordinator
 from .chainweb import ChainWeb
-from .scriptsMaster import run_sripts
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +90,6 @@ class Indexer:
                 
                 # Run scripts after filling missing blocks
                 #logger.info("Running scripts after filling missing blocks")
-                #run_sripts()
                 
                 # Sleep before the next iteration
                 await asyncio.sleep(5.0)
@@ -114,9 +112,6 @@ class Indexer:
                     if b.chain not in task_started:
                         task_started[b.chain] = asyncio.create_task(self._fill_missing_blocks_task(cw, b.chain))
                     
-                    # Run scripts after processing a new block
-                    #logger.info("Running scripts after processing a new block")
-                    #run_sripts()
             except asyncio.CancelledError:
                 logger.info("Cancelled")
                 for tsk in task_started.values():
