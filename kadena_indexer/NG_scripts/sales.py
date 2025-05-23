@@ -4,6 +4,7 @@ import os
 import sys
 import logging
 from datetime import datetime
+from decimal import Decimal
 from dotenv import load_dotenv
 import tempfile
 from collections import defaultdict
@@ -91,7 +92,7 @@ class SalesProcessor:
         try:
             if isinstance(price_data, dict):
                 return float(price_data.get('decimal', price_data.get('amount', 0)))
-            elif isinstance(price_data, (int, float, str)):
+            elif isinstance(price_data, (int, float, str, Decimal)):
                 return float(price_data)
             else:
                 logger.warning(f"Unexpected price format: {price_data}")
