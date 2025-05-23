@@ -155,29 +155,54 @@ class V2TokenProcessor:
             logger.error(f"Error processing TOKEN event: {e}")
 
     def group_policies(self, policies):
-        """Group policies by namespace"""
+        """Group policies by namespace, handling both string and object formats"""
         grouped_policies = defaultdict(lambda: defaultdict(list))
         
-        for policy_str in policies:
+        for policy in policies:
             try:
-                if not isinstance(policy_str, str):
-                    logger.warning(f"Policy is not a string: {policy_str}")
-                    continue
+                # Handle string format (original case)
+                if isinstance(policy, str):
+                    parts = policy.split(".")
+                    if len(parts) >= 2:
+                        namespace = parts[0]
+                        policy_name = ".".join(parts[1:])
+                        grouped_policies[namespace][policy_name].append(policy)
+                    else:
+                        logger.warning(f"Unexpected policy format: {policy}")
+                        
+                # Handle object format (new case)
+                elif isinstance(policy, dict):
+                    # Process refName policy
+                    if 'refName' in policy and isinstance(policy['refName'], dict):
+                        ref_name = policy['refName']
+                        if 'name' in ref_name and 'namespace' in ref_name:
+                            namespace = ref_name['namespace']
+                            policy_name = ref_name['name']
+                            grouped_policies[namespace][policy_name].append(policy)
                     
-                parts = policy_str.split(".")
-                if len(parts) >= 2:
-                    namespace = parts[0]
-                    policy_name = ".".join(parts[1:])
-                    grouped_policies[namespace][policy_name].append(policy_str)
+                    # Process refSpec policies (list of policy references)
+                    if 'refSpec' in policy and isinstance(policy['refSpec'], list):
+                        for ref_spec in policy['refSpec']:
+                            if isinstance(ref_spec, dict) and 'name' in ref_spec and 'namespace' in ref_spec:
+                                namespace = ref_spec['namespace']
+                                policy_name = ref_spec['name']
+                                grouped_policies[namespace][policy_name].append(ref_spec)
+                            else:
+                                logger.warning(f"Invalid refSpec format: {ref_spec}")
+                                
+                    # If neither refName nor refSpec, log warning
+                    if 'refName' not in policy and 'refSpec' not in policy:
+                        logger.warning(f"Policy object missing refName and refSpec: {policy}")
+                        
                 else:
-                    logger.warning(f"Unexpected policy format: {policy_str}")
+                    logger.warning(f"Policy is not a string or dict: {policy} (type: {type(policy)})")
                     
             except Exception as e:
-                logger.error(f"Error processing policy string '{policy_str}': {e}")
+                logger.error(f"Error processing policy '{policy}': {e}")
         
         # Convert defaultdict to regular dict for MongoDB storage
         return {ns: dict(policies) for ns, policies in grouped_policies.items()}
-
+    
     def process_reconcile_event(self, event_params, height):
         """Process RECONCILE event"""
         try:

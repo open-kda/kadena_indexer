@@ -6,7 +6,7 @@ mongo_uri = "mongodb://root:test6test6withpas5528fjF@neo.kadenaiconnect.com:2701
 
 # Target database and collection
 database_name = "nft_events"
-collection_name = "chain8v2tokens"
+collection_name = "marmalade-v2.ledger.RECONCILE"
 
 def fetch_last_100(uri, db_name, coll_name):
     try:
