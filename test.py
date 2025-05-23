@@ -6,7 +6,7 @@ mongo_uri = "mongodb://root:test6test6withpas5528fjF@neo.kadenaiconnect.com:2701
 
 # Target database and collection
 database_name = "nft_events"
-collection_name = "chain8v2tokens"
+collection_name = "marmalade-v2.ledger.TOKEN"
 
 def fetch_last_100(uri, db_name, coll_name):
     try:
@@ -20,6 +20,9 @@ def fetch_last_100(uri, db_name, coll_name):
 
         print(f"Fetching last 100 inserted records from '{coll_name}'...")
         records = list(collection.find().sort("$natural", -1).limit(100))
+        
+        last_token_height = collection.find_one({"_id": "last_v2_token_height"})
+        print(f"last_token_height '{last_token_height}'")
 
         print(f"Fetched {len(records)} records.\n")
         for doc in records:
